@@ -1,4 +1,3 @@
-import numpy as np
 import scipy.stats as stats #Statistical package from open-source python library
 
 class SignalDetection:
@@ -21,11 +20,13 @@ class SignalDetection:
         H = self.hits_rate()
         FA = self.falseAlarms_rate()
 
-        # Uses clip function to limit extreme values and prevent z-score calculation issues
-        # Found clip function by searching up technqiues to limit extreme values
-
-        H = np.clip(H,1e-10,1-1e-10) #Avoids the value 0 or 1
-        FA = np.clip(FA,1e-10,1-1e-10) #Avoids the value 0 or 1
+        #Calculates extreme/perfect scenarios
+        if H == 1: #d' for perfect hit rates
+            return float('inf')
+        if FA == 1: #d' for perfect false alarm rates
+            return float("-inf")
+        if H == 0 and FA == 0:
+            return float("-inf") #d' for worst detection rates
 
         #Calculates z-scores of hit and false alarm rates using percent point function (inverse of the cumulative distribution function)
         z_H = stats.norm.ppf(H)
@@ -37,17 +38,15 @@ class SignalDetection:
         H = self.hits_rate()
         FA = self.falseAlarms_rate()
        
-       #Clips values
-        H = np.clip(H,1e-10,1-1e-10) #Avoids the value 0 or 1
-        FA = np.clip(FA,1e-10,1-1e-10) #Avoids the value 0 or 1
-
+       ##Calculates extreme/perfect scenarios
+        if H ==1 and FA == 0: #Perfect hit rates, no bias
+            return 0
+        if H == 0 and FA == 1: #Perfect miss, no bias
+            return 0
+        if H == 0 and FA == 0: #Worst case, no bias 
+            return 0
+        
+        #Calculates z-scores of hit and false alarm rates using percent point function (inverse of the cumulative distribution function)
         z_H = stats.norm.ppf(H)
         z_FA = stats.norm.ppf(FA)
         return-0.5 * (z_H + z_FA)
-
-#Testing scenarios
-sd = SignalDetection(hits=0, misses=10,falseAlarms=15, correctRejections=5)
-print("Hit Rate: ", sd.hits_rate())
-print("False Alarms Rate: ", sd.falseAlarms_rate())
-print("d_prime: ", sd.d_prime())
-print("Criterion (C): ", sd.criterion())
